@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "web-form-field-inventory"
-version = "1.0.0"
+version = "1.1.0"
 description = "Inspect saved HTML for fields, labels, validation, accessibility, and submission targets."
 readme = "README.md"
 requires-python = ">=3.10"

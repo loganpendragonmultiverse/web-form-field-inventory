@@ -36,3 +36,13 @@ python -m build
 The project is feature-complete for its documented v1 scope. Maintenance focuses on correctness, security, compatibility, and well-supported input improvements.
 
 Part of the [Logan Pendragon Forge open-source collection](https://www.loganpendragonforge.com/open-source/). Licensed under the [MIT License](LICENSE).
+
+## Version 1.1.0: reviewed improvements
+
+Resolve supported static accessible-name patterns, external form associations and source locations; compare saved HTML forms.
+
+```bash
+form-inventory examples/sample.json --format json
+```
+
+The inventory recognizes wrapping and explicit labels, button text, aria-label, aria-labelledby and controls associated through the form attribute. Input controls default to text, and reports include line/column positions and validation constraints. Add `baseline_html` containing the previous saved HTML to receive added, removed and changed form/field records, including actions and methods. Comparison identities use form ID plus field ID/name and ordinal, so reordered anonymous controls may appear changed. This is static HTML analysis: CSS visibility, scripts, shadow DOM and the browser accessibility tree are not evaluated. No form is submitted.
