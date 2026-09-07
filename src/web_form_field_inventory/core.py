@@ -201,7 +201,7 @@ def _form_inventory(data: dict[str, Any]) -> dict[str, Any]:
 
 def analyze(data: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(data, dict):
-        raise ValueError("input must be a JSON object")
+        raise TypeError("input must be a JSON object")
     report = {"version": 1, "project": PROJECT, **_form_inventory(data)}
     if "baseline_html" in data:
         previous = _form_inventory({"html": data["baseline_html"]})

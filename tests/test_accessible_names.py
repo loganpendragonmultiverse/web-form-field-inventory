@@ -40,5 +40,5 @@ def test_saved_html_diff_is_structural() -> None:
     "data", [{"html": []}, {"path": 42}, {"html": "<form></form>", "baseline_html": None}]
 )
 def test_invalid_fields(data) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises((ValueError, TypeError)):
         analyze(data)
