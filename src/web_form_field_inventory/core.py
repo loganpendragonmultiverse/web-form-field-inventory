@@ -4,6 +4,7 @@ import json
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
+from urllib.parse import urljoin
 
 PROJECT = "web-form-field-inventory"
 
@@ -161,6 +162,73 @@ class _FormParser(HTMLParser):
             )
 
 
+def _disabled(node: dict[str, Any], nodes: list[dict[str, Any]]) -> bool:
+    if "disabled" in node["attrs"]:
+        return True
+    for parent in node["parents"]:
+        if parent["tag"] != "fieldset" or "disabled" not in parent["attrs"]:
+            continue
+        legends = [
+            item
+            for item in nodes
+            if item["tag"] == "legend" and item["parents"] and item["parents"][-1] is parent
+        ]
+        if not legends or not any(ancestor is legends[0] for ancestor in node["parents"]):
+            return True
+    return False
+
+
+def _submissions(parser: _FormParser, document_url: str) -> None:
+    base = next(
+        (
+            (node["attrs"].get("href") or "")
+            for node in parser.nodes
+            if node["tag"] == "base" and "href" in node["attrs"]
+        ),
+        "",
+    )
+    base_url = urljoin(document_url, base)
+    for form in parser.forms:
+        variants = []
+        for node, field in parser.controls:
+            if node["tag"] not in {"input", "button"}:
+                continue
+            ordinal = next((i for i, item in enumerate(form["fields"], 1) if item is field), None)
+            if ordinal is None or _disabled(node, parser.nodes):
+                continue
+            kind = str(field["type"]).lower()
+            if node["tag"] == "button" and kind not in {"submit", "reset", "button"}:
+                kind = "submit"
+            if kind not in {"submit", "image"}:
+                continue
+            attrs = node["attrs"]
+            action = attrs.get("formaction") if "formaction" in attrs else form["action"]
+            action = action or ""
+            method = str(attrs.get("formmethod") if "formmethod" in attrs else form["method"])
+            method = method.lower()
+            if method not in {"get", "post", "dialog"}:
+                method = "get"
+            name = field["name"]
+            submitter = {
+                "field": ordinal,
+                "id": field["id"],
+                "name": name,
+                "type": kind,
+                "value": attrs.get("value", "") if kind != "image" and name else None,
+                "coordinate_names": ([f"{name}.x", f"{name}.y"] if name else ["x", "y"])
+                if kind == "image"
+                else [],
+            }
+            variants.append(
+                {
+                    "submitter": submitter,
+                    "action": urljoin(base_url, action) if action else document_url,
+                    "method": method,
+                }
+            )
+        form["submissions"] = variants
+
+
 def _form_inventory(data: dict[str, Any]) -> dict[str, Any]:
     html = data.get("html", "")
     if not isinstance(html, str) or ("path" in data and not isinstance(data["path"], str)):
@@ -169,9 +237,17 @@ def _form_inventory(data: dict[str, Any]) -> dict[str, Any]:
         html = Path(data["path"]).read_text(encoding="utf-8")
     if not html:
         raise ValueError("html or path is required")
+    include_submissions = data.get("include_submissions", False)
+    if not isinstance(include_submissions, bool):
+        raise TypeError("include_submissions must be a boolean")
+    document_url = data.get("document_url", "")
+    if not isinstance(document_url, str):
+        raise TypeError("document_url must be a string")
     parser = _FormParser()
     parser.feed(html)
     parser.resolve()
+    if include_submissions:
+        _submissions(parser, document_url)
     issues = []
     for form_index, form in enumerate(parser.forms, 1):
         for field in form["fields"]:
@@ -204,13 +280,21 @@ def analyze(data: dict[str, Any]) -> dict[str, Any]:
         raise TypeError("input must be a JSON object")
     report = {"version": 1, "project": PROJECT, **_form_inventory(data)}
     if "baseline_html" in data:
-        previous = _form_inventory({"html": data["baseline_html"]})
+        previous = _form_inventory(
+            {
+                "html": data["baseline_html"],
+                "include_submissions": data.get("include_submissions", False),
+                "document_url": data.get("document_url", ""),
+            }
+        )
 
         def records(inventory: dict[str, Any]) -> dict[str, Any]:
             rows = {}
             for i, form in enumerate(inventory["forms"]):
                 identity = form["id"] or f"form-{i + 1}"
                 rows[identity] = {"action": form["action"], "method": form["method"]}
+                if "submissions" in form:
+                    rows[identity]["submissions"] = form["submissions"]
                 for j, field in enumerate(form["fields"]):
                     key = f"{identity}/{field['id'] or field['name'] or 'unnamed'}:{j + 1}"
                     rows[key] = {
