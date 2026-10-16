@@ -10,6 +10,7 @@ Run the complete existing suite plus the new regression fixtures. Confirm the do
 
 Run the full suite, including synthetic HTML for external controls, multiple
 submitters, disabled fieldsets and first legends, unnamed and image controls,
-relative/base actions, method defaults and structural baseline changes.
+relative/base actions (including empty or absent first href attributes), irrelevant
+select/textarea type attributes, method defaults and structural baseline changes.
 No test executes HTML or sends a form. Verify both README examples from an
 installed wheel and an extracted source distribution.

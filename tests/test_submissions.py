@@ -103,3 +103,33 @@ def test_baseline_compares_effective_variants_without_changing_default_schema():
 def test_invalid_options(extra):
     with pytest.raises(TypeError):
         analyze({"html": "<form></form>", **extra})
+
+
+@pytest.mark.parametrize(
+    ("bases", "expected"),
+    [
+        ('<base href=""><base href="/later/">', "https://example.test/forms/"),
+        ('<base href><base href="/later/">', "https://example.test/forms/"),
+        ('<base><base href="/chosen/">', "https://example.test/chosen/"),
+        ('<base href="/first/"><base href="/later/">', "https://example.test/first/"),
+    ],
+)
+def test_first_href_bearing_base_including_empty(bases, expected):
+    rows = variants(
+        bases + '<form action="save"><button>Save</button>'
+        '<button formaction="next">Next</button></form>',
+        document_url="https://example.test/forms/edit",
+    )
+    assert [row["action"] for row in rows] == [expected + "save", expected + "next"]
+
+
+def test_irrelevant_type_attributes_are_not_submitters():
+    html = (
+        '<form action="save"><select type="submit" name="select" formaction="/wrong">'
+        '<option>A</option></select><textarea type="image" name="text" formaction="/wrong">'
+        'notes</textarea><button name="go">Go</button><input type="image" name="map"></form>'
+    )
+    rows = variants(html)
+    assert len(rows) == 2
+    assert [row["submitter"]["name"] for row in rows] == ["go", "map"]
+    assert all(row["action"] == "save" for row in rows)

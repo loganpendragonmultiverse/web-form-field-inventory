@@ -181,9 +181,9 @@ def _disabled(node: dict[str, Any], nodes: list[dict[str, Any]]) -> bool:
 def _submissions(parser: _FormParser, document_url: str) -> None:
     base = next(
         (
-            node["attrs"]["href"]
+            (node["attrs"].get("href") or "")
             for node in parser.nodes
-            if node["tag"] == "base" and node["attrs"].get("href")
+            if node["tag"] == "base" and "href" in node["attrs"]
         ),
         "",
     )
@@ -191,6 +191,8 @@ def _submissions(parser: _FormParser, document_url: str) -> None:
     for form in parser.forms:
         variants = []
         for node, field in parser.controls:
+            if node["tag"] not in {"input", "button"}:
+                continue
             ordinal = next((i for i, item in enumerate(form["fields"], 1) if item is field), None)
             if ordinal is None or _disabled(node, parser.nodes):
                 continue

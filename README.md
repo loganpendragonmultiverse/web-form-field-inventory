@@ -54,12 +54,15 @@ list to each form. Each row identifies one enabled submit button or image input,
 its effective action and method, and its source field ordinal, ID and name.
 `formaction` and `formmethod` override form defaults. Methods use HTML defaults:
 invalid values become `get`; `dialog` describes a dialog action, not a network request.
+Only `input` and `button` elements can produce submit variants; irrelevant
+`type` attributes on selects and textareas are ignored.
 External controls with a matching `form` ID participate in source order.
 Disabled controls and disabled fieldset descendants are omitted, except controls
 in that fieldset's first legend.
 
 Supply `document_url` to resolve relative actions, including the first static
-`base href`. An empty action uses the document URL. Without a document URL,
+`base` with an `href` attribute, even when that attribute is empty. Later
+base elements do not override it. An empty action uses the document URL. Without a document URL,
 relative actions remain relative. No URL is fetched or validated as reachable.
 Named submitters report their static value; unnamed buttons add no name/value.
 Image submitters expose coordinate names (`name.x`/`name.y` or `x`/`y`),
