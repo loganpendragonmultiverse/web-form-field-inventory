@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1 - 2026-10-20
+
+- Preserve external control source order, first-ID/attribute associations and all colliding comparison records. Normalize effective field types.
+- Bound HTML reads and structural work, refusing oversized inputs without partial-success reports.
+- Protect report creation against existing symlinks and raced regular files; add focused inventory and output-safety regressions.
+
 ## 1.2.0 - 2026-10-16
 
 - Added opt-in effective action and method variants for enabled submit controls, including external associations and image coordinate names.
