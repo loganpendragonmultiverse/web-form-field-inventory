@@ -62,6 +62,7 @@ def test_duplicate_form_and_cross_kind_comparison_keys_preserve_all_rows():
         "<form><label>" + "x" * 10001 + "<input></label></form>",
         '<form><input aria-labelledby="' + "x " * 101 + '"></form>',
     ],
+    ids=["nesting-depth", "node-count", "control-count", "label-length", "aria-references"],
 )
 def test_oversized_static_structures_fail_instead_of_partial_success(html):
     with pytest.raises(ValueError, match="exceeds"):
