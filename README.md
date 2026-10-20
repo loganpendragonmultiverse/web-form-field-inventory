@@ -77,3 +77,20 @@ CSS state, and successful submission are outside this static analysis.
 ```bash
 form-inventory examples/submissions.json --format json
 ```
+
+## 1.2.1 static inventory completion
+
+External controls and submission ordinals follow source order. Duplicate IDs and
+attributes use the first source occurrence for association; colliding comparison
+keys receive explicit source ordinals so no form or field silently replaces another.
+Input/button types use case-insensitive HTML defaults, while select/textarea type
+attributes do not change element kind. These remain static evidence, not a browser
+accessibility tree or a submitted request.
+
+Reads are bounded: JSON input 12 MB, each HTML input 5 MB, 20,000 elements, 200 nesting
+levels, 2,000 controls, 100 aria-labelledby references and 10,000 characters per
+resolved label. Exceeding a limit fails clearly rather than returning a partial
+success. Existing output files and symlinks are refused before exclusive creation;
+a regular file appearing during creation is preserved. Hostile concurrent filesystem
+changes are outside this accidental-overwrite protection. Run both installed examples
+and the full format/lint/type/coverage/build matrix before release.

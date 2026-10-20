@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import Path
 
-from .core import analyze, render_json, render_markdown
+from .core import MAX_JSON_BYTES, analyze, read_bounded, render_json, render_markdown
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -17,16 +17,24 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     try:
-        data = json.loads(args.input.read_text(encoding="utf-8"))
+        data = json.loads(read_bounded(args.input, MAX_JSON_BYTES))
         report = analyze(data)
         rendered = render_json(report) if args.format == "json" else render_markdown(report)
         if args.output:
-            if args.output.exists():
+            if args.output.exists() or args.output.is_symlink():
                 raise ValueError(f"output already exists: {args.output}")
-            args.output.write_text(rendered, encoding="utf-8")
+            with args.output.open("x", encoding="utf-8") as output:
+                output.write(rendered)
         else:
             sys.stdout.write(rendered)
-    except (OSError, UnicodeError, ValueError, TypeError, json.JSONDecodeError) as exc:
+    except (
+        OSError,
+        UnicodeError,
+        ValueError,
+        TypeError,
+        RecursionError,
+        json.JSONDecodeError,
+    ) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     return 0
